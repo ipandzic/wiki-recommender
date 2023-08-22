@@ -8,3 +8,5 @@ djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
 psycopg2-binary==2.9.6
 tox==4.4.12
+scrapy
+twisted
