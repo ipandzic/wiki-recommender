@@ -127,3 +127,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 STATIC_URL = '/static/'
+
+REQUEST_FINGERPRINTER_IMPLEMENTATION = 'scrapy.utils.request.default_request_fingerprint'
