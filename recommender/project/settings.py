@@ -11,9 +11,8 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 from pathlib import Path
 
-
 import environ
-import os
+
 
 env = environ.Env()
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
