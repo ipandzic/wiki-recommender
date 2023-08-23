@@ -38,4 +38,3 @@ def get_recommended_links(request):
 
     links = get_links_with_beautiful_soup(url)
     return JsonResponse({"recommended_links": links})
-
