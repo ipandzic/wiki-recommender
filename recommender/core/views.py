@@ -17,6 +17,10 @@ def get_links_with_beautiful_soup(url):
 
     # Extract links from the main content area
     for link in soup.select('div.vector-body a'):
+        parent = link.find_parent(['div', 'span'], {'class': 'reflist', 'id': ['References', 'Citations']})
+        if parent:
+            continue  # skip links under "References" section
+
         href = link.get('href')
         if href:
             full_url = urljoin(base_url, href.split('#')[0])
@@ -24,6 +28,10 @@ def get_links_with_beautiful_soup(url):
 
     # Extract external links
     for link in soup.select('a.external.text'):
+        parent = link.find_parent(['div', 'span'], {'class': 'reflist', 'id': ['References', 'Citations']})
+        if parent:
+            continue  # skip links under "References" section
+
         href = link.get('href')
         if href and href[:2] != '//':
             recommended_links.append(href)
