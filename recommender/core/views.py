@@ -38,7 +38,6 @@ def get_links_with_beautiful_soup(url):
 
     return recommended_links
 
-
 def get_recommended_links(request):
     url = request.GET.get('url')
     if not url:
