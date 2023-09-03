@@ -9,6 +9,7 @@ env/
 venv/
 env.bak/
 venv.bak/
+docker.env
 
 # IDE and text editor settings
 .idea
