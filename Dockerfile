@@ -9,7 +9,7 @@ ENV DEBUG 0
 ENV DATABASE_NAME=$DATABASE_NAME
 
 # Set working directory
-WORKDIR /app/recommender
+WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y libpq-dev gcc
@@ -24,10 +24,11 @@ RUN apt-get autoremove -y gcc && apt-get clean
 # Copy the current directory contents into the container
 COPY . .
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Change to the directory containing manage.py
+WORKDIR /app/recommender
 
-# Apply database migrations
+# Run Django commands
+RUN python manage.py collectstatic --noinput
 RUN python manage.py migrate
 
 # Run gunicorn
