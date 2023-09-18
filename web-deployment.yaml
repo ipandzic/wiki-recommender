@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web  # This should match the labels in template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: web  # Make sure this matches with spec.selector.matchLabels
+    spec:
+      initContainers:
+      - name: web-migrate
+        image: my-django-app
+        imagePullPolicy: IfNotPresent
+        command: ["python", "manage.py", "migrate"]
+      containers:
+      - name: web
+        image: my-django-app
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
