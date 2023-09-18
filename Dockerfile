@@ -29,7 +29,3 @@ WORKDIR /app/recommender
 
 # Run Django commands
 RUN python manage.py collectstatic --noinput
-RUN python manage.py migrate
-
-# Run gunicorn
-CMD gunicorn myproject.wsgi:application --bind 0.0.0.0:$PORT
