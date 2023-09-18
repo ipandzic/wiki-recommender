@@ -19,9 +19,9 @@ services:
     ports:
       - "5433:5432"
     environment:
-      POSTGRES_DB: wiki
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: pg_pass
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     networks:
       - wiki
 
