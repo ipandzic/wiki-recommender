@@ -18,13 +18,6 @@ def get_recommended_links_view(request):
     return JsonResponse({"recommended_links": links})
 
 
-def normalize_url(url):
-    # Parse the URL and normalize it
-    parsed_url = urlparse(url)
-    normalized_url = urlunparse(parsed_url._replace(fragment='', query=''))
-    return normalized_url.lower()
-
-
 def get_links_with_beautiful_soup(url, max_links=20):
     # Remove the URL from the CandidatePages table if it exists
     CandidatePages.objects.filter(page=url).delete()
@@ -101,3 +94,10 @@ def get_links_with_beautiful_soup(url, max_links=20):
     CandidatePages.objects.filter(page__in=top_links).update(rate=2)
 
     return top_links
+
+
+def normalize_url(url):
+    # Parse the URL and normalize it
+    parsed_url = urlparse(url)
+    normalized_url = urlunparse(parsed_url._replace(fragment='', query=''))
+    return normalized_url.lower()
