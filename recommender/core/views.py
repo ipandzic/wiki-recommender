@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse, urlunparse
 from collections import Counter
+
+from django.db.models import F
 from django.http import JsonResponse
 
 from core.models import CandidatePages, CrawledPages
@@ -22,60 +24,74 @@ def get_links_with_beautiful_soup(url, max_links=20):
         return []
 
     soup = BeautifulSoup(response.content, 'html.parser')
-    article_text = soup.get_text()  # Get the entire text of the article
+    article_text = soup.get_text()
 
-    # Add the URL to the CrawledPages table, making it eligible for future crawling
+    # Add the URL to the CrawledPages table
     if not CrawledPages.objects.filter(page=url).exists():
         CrawledPages.objects.create(page=url)
 
     link_phrases = []
     crawled_pages = [obj.page for obj in CrawledPages.objects.all()]
 
-    # Extract links from the main content area
     for link in soup.select('div.vector-body a'):
         parent = link.find_parent(['div', 'span'], {'class': 'reflist', 'id': ['References', 'Citations']})
         if parent:
-            continue  # Skip links under "References" section
+            continue
+
         href = link.get('href')
         if href:
             full_url = urljoin(url, href.split('#')[0])
+
             if normalize_url(full_url) == normalized_url:
                 continue
 
             if full_url in crawled_pages:
                 continue
-            # Apply exclusion conditions
+
+            # Exclusion conditions
             if (full_url.startswith("https://en.wikipedia.org/wiki/Wikipedia") or
-                "(disambiguation)" in full_url or
-                full_url.endswith('.png') or
-                "(identifier)" in full_url or
-                full_url.startswith("https://en.wikipedia.org/wiki/Category:") or
-                full_url in ["https://en.wikipedia.org/wiki/Surname", "https://en.wikipedia.org/wiki/Given_name"] or
-                full_url.endswith('/') or
-                full_url.split('/')[-1].isdigit() or
-                full_url.lower() == url.lower()):
+                    "(disambiguation)" in full_url or
+                    full_url.endswith('.png') or
+                    "(identifier)" in full_url or
+                    full_url.startswith("https://en.wikipedia.org/wiki/Category:") or
+                    full_url.startswith("https://en.wikipedia.org/wiki/Help:") or  # <-- Add this line
+                    full_url.startswith("https://en.wikipedia.org/wiki/File:") or  # <-- Add this line
+                    full_url.startswith("https://en.wikipedia.org/wiki/Portal:") or  # <-- Add this line
+                    full_url in ["https://en.wikipedia.org/wiki/Surname", "https://en.wikipedia.org/wiki/Given_name"] or
+                    full_url.endswith('/') or
+                    full_url.split('/')[-1].isdigit() or
+                    full_url.lower() == url.lower()):
                 continue
 
-            if not CandidatePages.objects.filter(page=full_url).exists():
-                CandidatePages.objects.create(page=full_url, rate=0)
-
-            # Extract the title phrase from the link and convert underscores to spaces
             title_phrase = full_url.split('/')[-1].replace('_', ' ')
-
             link_phrases.append(title_phrase)
 
-    # Count occurrences of each title phrase in the text of the initial article
-    phrase_count = Counter(link_phrases)
-    for phrase in phrase_count:
-        phrase_count[phrase] = article_text.lower().count(phrase.lower())
+            if not CandidatePages.objects.filter(page=full_url).exists():
+                CandidatePages.objects.create(page=full_url, rate=1)  # Start with a rate of 1
 
-    # Sort by the count and take the top max_links
+    # Count occurrences of each title phrase in the text
+    phrase_count = Counter(link_phrases)
+
+    print(f"Link phrases: {link_phrases}")  # Debugging print statement
+
+    for phrase in phrase_count:
+        phrase_count[phrase] = 1 + article_text.lower().count(phrase.lower())  # Add 1 to ensure a minimum rate of 1
+
+    # Update the rate in CandidatePages
+    for phrase, count in phrase_count.items():
+        full_url = f"https://en.wikipedia.org/wiki/{phrase.replace(' ', '_')}"
+        CandidatePages.objects.filter(page=full_url).update(rate=count)
+
+    # Sort by the rate and take the top max_links
     sorted_phrases = sorted(phrase_count.items(), key=lambda x: x[1], reverse=True)[:max_links]
     top_links = [
         f"https://en.wikipedia.org/wiki/{phrase.replace(' ', '_')}"
         for phrase, count in sorted_phrases
         if f"https://en.wikipedia.org/wiki/{phrase.replace(' ', '_')}" != url
     ]
+
+    # Reset the rate for the selected links to 1
+    CandidatePages.objects.filter(page__in=top_links).update(rate=2)
 
     return top_links
 
