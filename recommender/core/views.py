@@ -46,6 +46,9 @@ def get_links_with_beautiful_soup(url, max_links=20):
         if href:
             full_url = urljoin(url, href.split('#')[0])
 
+            if not full_url.startswith("https://en.wikipedia.org/"):
+                continue
+            print(full_url)
             if normalize_url(full_url) == normalized_url:
                 continue
 
@@ -61,6 +64,8 @@ def get_links_with_beautiful_soup(url, max_links=20):
                     full_url.startswith("https://en.wikipedia.org/wiki/Help:") or
                     full_url.startswith("https://en.wikipedia.org/wiki/File:") or
                     full_url.startswith("https://en.wikipedia.org/wiki/Portal:") or
+                    full_url.startswith("https://en.wikipedia.org/wiki/Special:") or
+                    full_url.startswith("https://en.wikipedia.org/w/index.php?") or
                     full_url in ["https://en.wikipedia.org/wiki/Surname", "https://en.wikipedia.org/wiki/Given_name"] or
                     full_url.endswith('/') or
                     full_url.split('/')[-1].isdigit() or
