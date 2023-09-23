@@ -66,7 +66,7 @@ def get_links_with_beautiful_soup(url, max_links=20):
 
     # Count occurrences of each title phrase in the text of the initial article
     phrase_count = Counter(link_phrases)
-    for phrase in link_phrases:
+    for phrase in phrase_count:
         phrase_count[phrase] = article_text.lower().count(phrase.lower())
 
     # Sort by the count and take the top max_links
