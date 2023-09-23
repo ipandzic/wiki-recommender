@@ -17,6 +17,8 @@ def normalize_url(url):
 
 
 def get_links_with_beautiful_soup(url, max_links=20):
+    # Remove the URL from the CandidatePages table if it exists
+    CandidatePages.objects.filter(page=url).delete()
     # Fetch and parse the web page
     normalized_url = normalize_url(url)
     response = requests.get(url)
@@ -54,9 +56,9 @@ def get_links_with_beautiful_soup(url, max_links=20):
                     full_url.endswith('.png') or
                     "(identifier)" in full_url or
                     full_url.startswith("https://en.wikipedia.org/wiki/Category:") or
-                    full_url.startswith("https://en.wikipedia.org/wiki/Help:") or  # <-- Add this line
-                    full_url.startswith("https://en.wikipedia.org/wiki/File:") or  # <-- Add this line
-                    full_url.startswith("https://en.wikipedia.org/wiki/Portal:") or  # <-- Add this line
+                    full_url.startswith("https://en.wikipedia.org/wiki/Help:") or
+                    full_url.startswith("https://en.wikipedia.org/wiki/File:") or
+                    full_url.startswith("https://en.wikipedia.org/wiki/Portal:") or
                     full_url in ["https://en.wikipedia.org/wiki/Surname", "https://en.wikipedia.org/wiki/Given_name"] or
                     full_url.endswith('/') or
                     full_url.split('/')[-1].isdigit() or
@@ -71,8 +73,6 @@ def get_links_with_beautiful_soup(url, max_links=20):
 
     # Count occurrences of each title phrase in the text
     phrase_count = Counter(link_phrases)
-
-    print(f"Link phrases: {link_phrases}")  # Debugging print statement
 
     for phrase in phrase_count:
         phrase_count[phrase] = 1 + article_text.lower().count(phrase.lower())  # Add 1 to ensure a minimum rate of 1
