@@ -1,7 +1,5 @@
-# Use an official Python runtime as a parent image
 FROM python:3.8-slim-buster
 
-# Set environment variables
 ARG DATABASE_NAME
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
