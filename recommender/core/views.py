@@ -8,17 +8,15 @@ from core.models import CandidatePages, CrawledPages
 
 
 def get_links_with_beautiful_soup(url, max_links=20):
-    # Initialize empty list to hold the crawled pages
-    crawled_pages = [obj.page for obj in CrawledPages.objects.all()]
-
     # Fetch and parse the web page
     response = requests.get(url)
     if response.status_code != 200:
         return []
 
     soup = BeautifulSoup(response.content, 'html.parser')
+    article_text = soup.get_text()  # Get the entire text of the article
 
-    all_links = []
+    link_phrases = []
 
     # Extract links from the main content area
     for link in soup.select('div.vector-body a'):
@@ -30,31 +28,41 @@ def get_links_with_beautiful_soup(url, max_links=20):
         if href:
             full_url = urljoin(url, href.split('#')[0])
 
-            # Apply multiple exclusion conditions
-            if (full_url in crawled_pages or
-                    full_url.startswith("https://en.wikipedia.org/wiki/Wikipedia") or
-                    "(disambiguation)" in full_url or
-                    full_url.endswith('.png') or
-                    "(identifier)" in full_url or
-                    full_url in ["https://en.wikipedia.org/wiki/Surname", "https://en.wikipedia.org/wiki/Given_name"]):
+            # Apply exclusion conditions
+            if (full_url.startswith("https://en.wikipedia.org/wiki/Wikipedia") or
+                "(disambiguation)" in full_url or
+                full_url.endswith('.png') or
+                "(identifier)" in full_url or
+                full_url.startswith("https://en.wikipedia.org/wiki/Category:") or
+                full_url in ["https://en.wikipedia.org/wiki/Surname", "https://en.wikipedia.org/wiki/Given_name"] or
+                full_url.endswith('/') or
+                full_url.split('/')[-1].isdigit() or
+                full_url == url):
                 continue
-
-            all_links.append(full_url)
 
             if not CandidatePages.objects.filter(page=full_url).exists():
                 CandidatePages.objects.create(page=full_url, rate=0)
 
-    # Count the frequency of each link
-    link_count = Counter(all_links)
+            # Extract the title phrase from the link and convert underscores to spaces
+            title_phrase = full_url.split('/')[-1].replace('_', ' ')
 
-    # Get the most common links based on their frequency
-    most_common_links = [item[0] for item in link_count.most_common(max_links)]
+            link_phrases.append(title_phrase)
+
+    # Count occurrences of each title phrase in the text of the initial article
+    phrase_count = Counter(link_phrases)
+    print(phrase_count)
+    for phrase in link_phrases:
+        phrase_count[phrase] = article_text.lower().count(phrase.lower())
+
+    # Sort by the count and take the top max_links
+    sorted_phrases = sorted(phrase_count.items(), key=lambda x: x[1], reverse=True)[:max_links]
+    top_links = [f"https://en.wikipedia.org/wiki/{phrase.replace(' ', '_')}" for phrase, count in sorted_phrases]
 
     # Add the URL to the CrawledPages table, making it eligible for future crawling
     if not CrawledPages.objects.filter(page=url).exists():
         CrawledPages.objects.create(page=url)
 
-    return most_common_links
+    return top_links
 
 
 def get_recommended_links(request):
