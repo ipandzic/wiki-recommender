@@ -9,6 +9,15 @@ from django.http import JsonResponse
 from core.models import CandidatePages, CrawledPages
 
 
+def get_recommended_links_view(request):
+    url = request.GET.get('url')
+    if not url:
+        return JsonResponse({"error": "URL parameter is missing."}, status=400)
+
+    links = get_links_with_beautiful_soup(url)
+    return JsonResponse({"recommended_links": links})
+
+
 def normalize_url(url):
     # Parse the URL and normalize it
     parsed_url = urlparse(url)
@@ -92,12 +101,3 @@ def get_links_with_beautiful_soup(url, max_links=20):
     CandidatePages.objects.filter(page__in=top_links).update(rate=2)
 
     return top_links
-
-
-def get_recommended_links(request):
-    url = request.GET.get('url')
-    if not url:
-        return JsonResponse({"error": "URL parameter is missing."}, status=400)
-
-    links = get_links_with_beautiful_soup(url)
-    return JsonResponse({"recommended_links": links})
