@@ -77,18 +77,16 @@ def get_links_with_beautiful_soup(url, max_links=20):
     for phrase in phrase_count:
         phrase_count[phrase] = 1 + article_text.lower().count(phrase.lower())  # Add 1 to ensure a minimum rate of 1
 
-    # Update the rate in CandidatePages
+    # Update the rates
     for phrase, count in phrase_count.items():
         full_url = f"https://en.wikipedia.org/wiki/{phrase.replace(' ', '_')}"
-        CandidatePages.objects.filter(page=full_url).update(rate=count)
+        CandidatePages.objects.filter(page=full_url).update(rate=F('rate') + count)
 
-    # Sort by the rate and take the top max_links
-    sorted_phrases = sorted(phrase_count.items(), key=lambda x: x[1], reverse=True)[:max_links]
-    top_links = [
-        f"https://en.wikipedia.org/wiki/{phrase.replace(' ', '_')}"
-        for phrase, count in sorted_phrases
-        if f"https://en.wikipedia.org/wiki/{phrase.replace(' ', '_')}" != url
-    ]
+    # Get CandidatePages URLs and rates, excluding those in CrawledPages
+    candidate_pages = CandidatePages.objects.exclude(page__in=crawled_pages).order_by('-rate')[:max_links]
+
+    # Create a list of top links based on the rates
+    top_links = [obj.page for obj in candidate_pages]
 
     # Reset the rate for the selected links to 1
     CandidatePages.objects.filter(page__in=top_links).update(rate=2)
