@@ -37,6 +37,8 @@ def get_links_with_beautiful_soup(url, max_links=20):
     link_phrases = []
     crawled_pages = [obj.page for obj in CrawledPages.objects.all()]
 
+    unique_links = set()
+
     for link in soup.select('div.vector-body a'):
         parent = link.find_parent(['div', 'span'], {'class': 'reflist', 'id': ['References', 'Citations']})
         if parent:
@@ -46,16 +48,15 @@ def get_links_with_beautiful_soup(url, max_links=20):
         if href:
             full_url = urljoin(url, href.split('#')[0])
 
-            if not full_url.startswith("https://en.wikipedia.org/"):
-                continue
-            print(full_url)
-            if normalize_url(full_url) == normalized_url:
+            if full_url in unique_links:
                 continue
 
-            if full_url in crawled_pages:
-                continue
+            unique_links.add(full_url)
 
             # Exclusion conditions
+            if not full_url.startswith("https://en.wikipedia.org/"):
+                continue
+
             if (full_url.startswith("https://en.wikipedia.org/wiki/Wikipedia") or
                     "(disambiguation)" in full_url or
                     full_url.endswith('.png') or
@@ -70,6 +71,12 @@ def get_links_with_beautiful_soup(url, max_links=20):
                     full_url.endswith('/') or
                     full_url.split('/')[-1].isdigit() or
                     full_url.lower() == url.lower()):
+                continue
+
+            if normalize_url(full_url) == normalized_url:
+                continue
+
+            if full_url in crawled_pages:
                 continue
 
             title_phrase = full_url.split('/')[-1].replace('_', ' ')
